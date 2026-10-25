@@ -1,0 +1,15 @@
+[
+  {
+    "key": "fedcba9876543210fedcba9876543210fedcba98",
+    "user": "e161e60e5af34c2c863fc284344896e3@auth.local",
+    "platform": "linux",
+    "device_id": "0123456789abcdef0123456789abcdef01234567",
+    "device_name": "laptop",
+    "client_version": "9.0.8",
+    "platform_version": "ubuntu",
+    "last_accessed": "2026-10-25T02:53:42+02:00",
+    "last_login_ip": "192.0.2.20",
+    "wiped_at": null,
+    "is_desktop_client": true
+  }
+]
