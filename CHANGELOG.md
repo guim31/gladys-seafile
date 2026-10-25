@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-25
+
 ### Added
 
 - A Seafile account in Gladys, proposed in the Discover tab: online, quota used
@@ -27,3 +29,6 @@ the notes of the version's GitHub Release.
 - Username and password, or an API token (accounts with two-factor
   authentication); a "Test the connection" button.
 - Texts and documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-seafile/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-seafile/releases/tag/v1.0.0
