@@ -115,7 +115,9 @@ l'ajout du compte dans Gladys.
   bibliothèque créée n'est pas annoncée, sa modification suivante l'est.
 - **Le quota dépasse le seuil** : le compte dépasse le seuil de la
   configuration. Une fois, jusqu'à ce que l'usage redescende 5 points en
-  dessous. Variables : quota utilisé (%), seuil, espace utilisé, quota.
+  dessous. Variables : quota utilisé (%), seuil, espace utilisé, quota. Un quota déjà
+  au-dessus du seuil à la première lecture, ou quand le seuil change, n'est pas
+  annoncé.
 
 Une modification faite pendant que l'intégration ou Gladys était arrêtée est
 annoncée à la lecture suivante, une fois. Rien n'est annoncé à la toute première
@@ -146,7 +148,7 @@ lecture.
   Gladys (l'interface web doit s'y ouvrir), et le pare-feu.
 - **« identifiant, mot de passe ou jeton refusé par Seafile »** : vérifiez-les
   dans l'interface web ; un jeton d'API est supprimé quand le mot de passe
-  change ou quand vous vous déconnectez de tous les appareils.
+  change ou quand vous vous déconnectez de tous les appareils. Un mot de passe refusé n'est pas réessayé tout seul (Seafile pourrait bloquer le compte) : corrigez-le, puis enregistrez la configuration ou cliquez sur **Tester la connexion**.
 - **« double authentification active : utilisez un jeton d'API »** : créez un
   jeton comme indiqué plus haut.
 - **« aucune API Seafile à cette adresse »** : l'adresse n'est pas celle de

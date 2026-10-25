@@ -174,7 +174,8 @@ export function formatBytes(bytes) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
   let value = bytes;
   let unit = 0;
-  while (value >= 1000 && unit < units.length - 1) {
+  // 999,950 bytes is "1.0 MB", not "1000.0 KB".
+  while (value >= 999.95 && unit < units.length - 1) {
     value /= 1000;
     unit += 1;
   }

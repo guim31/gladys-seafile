@@ -111,7 +111,9 @@ added to Gladys.
   is not announced, its next modification is.
 - **The quota goes above the threshold**: the account goes above the
   threshold of the configuration. Once, until the usage goes back 5 points
-  below it. Variables: quota used (%), threshold, space used, quota.
+  below it. Variables: quota used (%), threshold, space used, quota. A quota already
+  above the threshold at the first reading, or when the threshold changes, is
+  not announced.
 
 A modification made while the integration or Gladys was stopped is announced
 at the next reading, once. Nothing is announced at the very first reading.
@@ -139,7 +141,7 @@ at the next reading, once. Nothing is announced at the very first reading.
   (the web interface must open there), and the firewall.
 - **"username, password or token refused by Seafile"**: check them in the web
   interface; an API token is deleted when the password changes or when you
-  log out of all devices.
+  log out of all devices. A refused password is not tried again by itself (Seafile could lock the account): fix it, then save the configuration or click **Test the connection**.
 - **"two-factor authentication is on: use an API token"**: create a token as
   shown above.
 - **"no Seafile API at this address"**: the address is not the web interface

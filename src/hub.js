@@ -25,7 +25,7 @@ import {
   serverIds,
   serverValues,
 } from './devices.js';
-import { SeafileClient, SeafileError } from './seafile/client.js';
+import { ERROR_KINDS, SeafileClient, SeafileError } from './seafile/client.js';
 import { hasCredentials, hostOf, normalizeConfig } from './config.js';
 import { ProblemLog } from './problems.js';
 import { CONNECTION_TEXT, ERROR_TEXT, REPORT_TEXT, formatBytes, labelled, pick } from './texts.js';
@@ -55,6 +55,10 @@ export const MAX_LIBRARY_EVENTS = 20;
 // A quota event fires again once the usage went this many points below the threshold.
 export const QUOTA_HYSTERESIS = 5;
 
+// Errors of /admin/sysinfo/ that are errors of the whole read; any other one
+// only hides the server device.
+const ADMIN_FATAL = new Set([ERROR_KINDS.UNREACHABLE, ERROR_KINDS.TLS, ERROR_KINDS.AUTH]);
+
 export class SeafileHub {
   /**
    * @param {object} options
@@ -77,6 +81,7 @@ export class SeafileHub {
     this.config = normalizeConfig({});
     this.client = null;
     this.signature = null;
+    this.formerEmail = null;
     this.resetView();
     this.polling = null;
     this.transports = new Map();
@@ -249,7 +254,19 @@ export class SeafileHub {
     const devices = await client.devices();
     const now = this.now();
     const askAdmin = this.admin !== false || now - this.adminAt >= this.timings.adminRetryMs;
-    const sysinfo = askAdmin ? await client.sysinfo() : null;
+    let sysinfo = null;
+    if (askAdmin) {
+      try {
+        sysinfo = await client.sysinfo();
+        this.problems.recover('sysinfo', 'The server figures of Seafile answer again');
+      } catch (err) {
+        // The account answered: only the server figures are missing.
+        if (!(err instanceof SeafileError) || ADMIN_FATAL.has(err.kind)) {
+          throw err;
+        }
+        this.problems.fail('sysinfo', `Server figures unreadable: ${err.message}`);
+      }
+    }
     return { version, account, repos, devices, sysinfo, askAdmin };
   }
 
@@ -283,7 +300,11 @@ export class SeafileHub {
 
     let dirty = false;
     if (this.saved.email !== account.email) {
-      // Another account: what was seen of the previous one means nothing here.
+      // Another account: what was seen of the previous one means nothing here,
+      // and its device, if added, goes offline.
+      if (this.saved.email) {
+        this.formerEmail = this.saved.email;
+      }
       this.saved = this.emptySaved(account.email);
       dirty = true;
     }
@@ -445,11 +466,16 @@ export class SeafileHub {
     await this.pollNow();
   }
 
-  /** The external ids of our devices (account known once read). */
+  /** The email of the account: read, or kept in /data when Seafile does not answer. */
+  get accountEmail() {
+    return this.account?.email ?? this.saved.email;
+  }
+
+  /** The external ids of our devices (account known once read, or from /data). */
   deviceIds() {
     const ids = [serverIds(this.gladys).device];
-    if (this.account) {
-      ids.unshift(accountIds(this.gladys, this.account.email).device);
+    if (this.accountEmail) {
+      ids.unshift(accountIds(this.gladys, this.accountEmail).device);
     }
     return ids;
   }
@@ -459,7 +485,8 @@ export class SeafileHub {
    * has (and sends an unchanged one again after `heartbeatMs`).
    */
   async publishStates() {
-    if (this.readAt === 0 || !this.account) {
+    const email = this.accountEmail;
+    if (this.readAt === 0 || !email) {
       return;
     }
     const states = [];
@@ -468,10 +495,13 @@ export class SeafileHub {
         states.push(state);
       }
     };
-    if (this.isCreated(accountIds(this.gladys, this.account.email).device)) {
+    if (this.formerEmail && this.isCreated(accountIds(this.gladys, this.formerEmail).device)) {
+      push(accountValues(this.gladys, this.formerEmail, { online: false }));
+    }
+    if (this.isCreated(accountIds(this.gladys, email).device)) {
       push(
-        accountValues(this.gladys, this.account.email, {
-          online: !this.error,
+        accountValues(this.gladys, email, {
+          online: !this.error && Boolean(this.account),
           account: this.account,
           repos: this.repos,
           devices: this.linkedDevices,
@@ -512,13 +542,21 @@ export class SeafileHub {
 
   /** The badge of the added devices: local, or unreachable. */
   async publishTransports() {
-    if (!this.client || this.readAt === 0 || !this.account) {
+    if (!this.client || this.readAt === 0 || !this.accountEmail) {
       return;
     }
-    const transport = this.error ? DEVICE_TRANSPORTS.UNREACHABLE : DEVICE_TRANSPORTS.LOCAL;
-    const entries = this.deviceIds()
-      .filter((id) => this.isCreated(id) && this.transports.get(id) !== transport)
-      .map((id) => ({ external_id: id, transport }));
+    const transport =
+      this.error || !this.account ? DEVICE_TRANSPORTS.UNREACHABLE : DEVICE_TRANSPORTS.LOCAL;
+    const wanted = this.deviceIds().map((id) => [id, transport]);
+    if (this.formerEmail) {
+      wanted.push([
+        accountIds(this.gladys, this.formerEmail).device,
+        DEVICE_TRANSPORTS.UNREACHABLE,
+      ]);
+    }
+    const entries = wanted
+      .filter(([id, value]) => this.isCreated(id) && this.transports.get(id) !== value)
+      .map(([id, value]) => ({ external_id: id, transport: value }));
     if (entries.length === 0) {
       return;
     }
@@ -588,6 +626,8 @@ export class SeafileHub {
 
   /** "Test the connection": read Seafile now, one line. */
   async testConnection() {
+    // A refused password is tried again only on the user's request.
+    this.client?.retryLogin();
     await this.pollNow({ publish: true });
     const message = {};
     const status = this.connectionStatus();

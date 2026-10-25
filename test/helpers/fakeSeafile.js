@@ -97,6 +97,9 @@ export class FakeSeafile {
       case '/api2/devices/':
         return json(200, this.devices);
       case '/api/v2.1/admin/sysinfo/':
+        if (this.sysinfoStatus) {
+          return { status: this.sysinfoStatus, headers: {}, body: 'Server Error' };
+        }
         return this.admin ? json(200, this.sysinfo) : json(403, fixture('forbidden.json'));
       default:
         return { status: 404, headers: {}, body: '<h1>Not Found</h1>' };

@@ -280,7 +280,11 @@ export function lastModified(repos) {
  * The values of the account device: `{ key, device_feature_external_id,
  * state|text }`. Offline: only `online`.
  */
-export function accountValues(gladys, email, { online, account, repos, devices, language }) {
+export function accountValues(
+  gladys,
+  email,
+  { online, account, repos = [], devices = [], language },
+) {
   const values = [{ key: ACCOUNT_KEYS.ONLINE, state: online ? 1 : 0 }];
   if (online && account) {
     const last = lastModified(repos);

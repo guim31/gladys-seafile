@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
-import { ACCOUNT_KEYS, SERVER_KEYS } from '../src/devices.js';
+import { ACCOUNT_KEYS, SERVER_KEYS, accountIds } from '../src/devices.js';
 import { MAX_LIBRARY_EVENTS, TRIGGERS, WIDGET_KEY } from '../src/hub.js';
 import {
   API_TOKEN,
@@ -275,7 +275,7 @@ test('wrong password, two-factor authentication: a readable status', async (t) =
   );
   seafile.password = baseConfig().password;
   seafile.otp = true;
-  await world.hub.pollNow();
+  await world.fake.action('test_connection', {});
   assert.equal(
     world.fake.connectionStatus.message.en,
     'two-factor authentication is on: use an API token',
@@ -416,4 +416,63 @@ test('the container reads Seafile on its own timer', async (t) => {
   await new Promise((resolve) => setImmediate(resolve));
   await world.hub.polling;
   assert.equal(reads(), before + 1);
+});
+
+test('Seafile down at a restart: the account added goes offline all the same', async (t) => {
+  const clock = createClock();
+  const seafile = new FakeSeafile();
+  const first = await createWorld({ clock, seafile });
+  const device = first.fake.discoveredDevices[0];
+  await first.app.stop();
+  seafile.down = true;
+  const second = await createWorld({ clock, seafile, dataDir: first.dataDir, devices: [device] });
+  t.after(() => second.app.stop());
+  assert.equal(account(second, ACCOUNT_KEYS.ONLINE), 0);
+  assert.equal(second.fake.transports.at(-1).transport, 'unreachable');
+});
+
+test('a refused password is not tried again at every read, only on "Test the connection"', async (t) => {
+  const seafile = new FakeSeafile();
+  seafile.password = 'other';
+  const world = await createWorld({ seafile });
+  t.after(() => world.app.stop());
+  for (let i = 0; i < 3; i += 1) {
+    await world.hub.pollNow();
+  }
+  assert.equal(seafile.logins, 1);
+  seafile.password = baseConfig().password;
+  const ack = await world.fake.action('test_connection', {});
+  assert.equal(ack.success, true, ack.error);
+  assert.equal(seafile.logins, 2);
+  assert.equal(world.fake.connectionStatus.connected, true);
+});
+
+test('the server figures failing only hide the server device, the account still reads', async (t) => {
+  const seafile = new FakeSeafile({ admin: true });
+  seafile.sysinfoStatus = 500;
+  const world = await createWorld({ seafile });
+  t.after(() => world.app.stop());
+  assert.equal(world.fake.connectionStatus.connected, true);
+  assert.deepEqual(
+    world.fake.discoveredDevices.map((d) => d.name),
+    ['Seafile admin'],
+  );
+});
+
+test('another account: the device of the previous one goes offline', async (t) => {
+  const clock = createClock();
+  const first = await createWorld({ clock });
+  const device = first.fake.discoveredDevices[0];
+  await first.app.stop();
+  const second = await createWorld({
+    clock,
+    seafile: new FakeSeafile({ admin: true }),
+    dataDir: first.dataDir,
+    devices: [device],
+  });
+  t.after(() => second.app.stop());
+  assert.equal(
+    second.fake.lastState(accountIds(second.gladys, first.seafile.account.email).feature('online')),
+    0,
+  );
 });

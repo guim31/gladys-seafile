@@ -118,7 +118,8 @@ funktioniert schon, bevor das Konto in Gladys angelegt ist.
 - **Das Kontingent überschreitet die Schwelle**: Das Konto überschreitet die
   Schwelle der Konfiguration. Einmal, bis die Nutzung wieder 5 Punkte darunter
   sinkt. Variablen: belegtes Kontingent (%), Schwelle, belegter Speicher,
-  Kontingent.
+  Kontingent. Ein Kontingent, das beim ersten Lesen oder bei einer Änderung der
+  Schwelle schon darüber liegt, wird nicht gemeldet.
 
 Eine Änderung, während die Integration oder Gladys gestoppt war, wird beim
 nächsten Lesen gemeldet, einmal. Beim allerersten Lesen wird nichts gemeldet.
@@ -148,7 +149,7 @@ nächsten Lesen gemeldet, einmal. Beim allerersten Lesen wird nichts gemeldet.
   Weboberfläche muss sich dort öffnen) und die Firewall.
 - **„Benutzername, Passwort oder Token von Seafile abgelehnt“**: Prüfe sie in
   der Weboberfläche; ein API-Token wird gelöscht, wenn sich das Passwort ändert
-  oder du dich von allen Geräten abmeldest.
+  oder du dich von allen Geräten abmeldest. Ein abgelehntes Passwort wird nicht von selbst erneut versucht (Seafile könnte das Konto sperren): Korrigiere es, speichere dann die Konfiguration oder klicke auf **Verbindung testen**.
 - **„Zwei-Faktor-Authentifizierung aktiv: Nutze ein API-Token“**: Erstelle ein
   Token wie oben beschrieben.
 - **„keine Seafile-API unter dieser Adresse“**: Die Adresse ist nicht die der

@@ -116,7 +116,9 @@ incluso antes de añadir la cuenta a Gladys.
   modificación sí.
 - **La cuota supera el umbral**: la cuenta supera el umbral de la
   configuración. Una vez, hasta que el uso vuelva a bajar 5 puntos por debajo.
-  Variables: cuota usada (%), umbral, espacio usado, cuota.
+  Variables: cuota usada (%), umbral, espacio usado, cuota. Una cuota ya por
+  encima del umbral en la primera lectura, o cuando cambia el umbral, no se
+  anuncia.
 
 Una modificación hecha mientras la integración o Gladys estaban detenidas se
 anuncia en la lectura siguiente, una vez. No se anuncia nada en la primera
@@ -146,7 +148,7 @@ lectura.
   (la interfaz web debe abrirse allí) y el cortafuegos.
 - **«usuario, contraseña o token rechazados por Seafile»**: compruébelos en la
   interfaz web; un token de API se elimina cuando cambia la contraseña o
-  cuando cierra la sesión en todos los dispositivos.
+  cuando cierra la sesión en todos los dispositivos. Una contraseña rechazada no se vuelve a probar sola (Seafile podría bloquear la cuenta): corríjala y guarde la configuración o pulse **Probar la conexión**.
 - **«autenticación en dos pasos activa: use un token de API»**: cree un token
   como se indica arriba.
 - **«no hay ninguna API de Seafile en esta dirección»**: la dirección no es la

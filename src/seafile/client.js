@@ -205,6 +205,14 @@ export class SeafileClient {
     this.request = request;
     this.timeoutMs = timeoutMs;
     this.token = apiToken || null;
+    // The refusal of the password: not tried again at every read (Seahub counts
+    // the failed logins and may freeze the account), only on retryLogin().
+    this.loginRefused = null;
+  }
+
+  /** "Test the connection": the password may have been fixed in Seafile. */
+  retryLogin() {
+    this.loginRefused = null;
   }
 
   async send(path, { method = 'GET', headers = {}, body } = {}) {
@@ -220,7 +228,7 @@ export class SeafileClient {
       if (TLS_CODES.has(code)) {
         throw new SeafileError(ERROR_KINDS.TLS, `Certificate refused (${code})`);
       }
-      throw new SeafileError(ERROR_KINDS.UNREACHABLE, code ?? err.name ?? err.message);
+      throw new SeafileError(ERROR_KINDS.UNREACHABLE, code ?? err.message);
     }
   }
 
@@ -263,6 +271,20 @@ export class SeafileClient {
   }
 
   async login() {
+    if (this.loginRefused) {
+      throw this.loginRefused;
+    }
+    try {
+      await this.requestToken();
+    } catch (err) {
+      if (err.kind === ERROR_KINDS.AUTH || err.kind === ERROR_KINDS.OTP) {
+        this.loginRefused = err;
+      }
+      throw err;
+    }
+  }
+
+  async requestToken() {
     const body = new URLSearchParams({ username: this.username, password: this.password });
     const response = await this.send('/api2/auth-token/', {
       method: 'POST',

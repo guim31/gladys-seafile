@@ -70,7 +70,8 @@ export function quotaColor(percent, threshold) {
 
 async function get(hub, { language = 'en' }) {
   if (!hub.client) {
-    return message(TEXT.pick, language);
+    const status = hub.connectionStatus();
+    return message(hub.config.urlTyped && !hub.config.url ? status.message : TEXT.pick, language);
   }
   const account = hub.account;
   const percent = account ? quotaPercent(account) : null;

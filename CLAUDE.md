@@ -266,3 +266,6 @@ Vérifié contre Seafile Server CE 12.0.14 (`seafileltd/seafile-mc:12.0-latest`,
   et les liens d'upload renvoient ce nom d'hôte : le réécrire vers l'IP du conteneur.
 - Fonctionnalité seule de son couple sur l'appareil compte (`input/binary`, `level-sensor/liquid-level-percent`) :
   acceptée, aucun second capteur n'a de sens ; le test de conformité le dit.
+- Un mot de passe refusé (400) ou une double authentification n'est **pas retenté à chaque lecture** : Seahub
+  compte les échecs (`LOGIN_ATTEMPT_LIMIT`, gel possible du compte). Nouvel essai sur changement de configuration
+  ou « Tester la connexion » (`retryLogin`). Relecture indépendante du 25/10.
