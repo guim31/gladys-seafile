@@ -28,8 +28,15 @@ Gladys before reporting a problem.
 
 ## Scope
 
-In scope: the code of this repository and the Docker image it publishes.
+In scope: the code of this repository and the Docker image it publishes. The
+integration reads one Seafile account through the Web API of Seahub, read-only:
+it never changes a file, a library or a setting. The password (or API token)
+stays in the configuration of Gladys; the token Seafile gives in exchange for
+the password is kept in memory only, and neither appears in the logs. The only
+file written under `/data` holds the last modification time of every library
+and whether the quota is above the threshold, nothing secret. The container
+opens no port and only talks to the address entered in the configuration.
 
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and Seafile itself (see its [security page](https://www.seafile.com/en/security/)).

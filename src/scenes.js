@@ -1,41 +1,43 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene action handlers (manifest `scene_actions`, Gladys 5.1+).
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
-//
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// "Is the quota above 90 %?" is already a scene condition on the device
+// features, once the account is added to Gladys. The reading action is about
+// what a condition cannot do: put the state in a message ("Seafile: 4.2 GB of
+// 10 GB used (42 %), 3 libraries, last modified: Photos on 22/10 08:12"). It
+// reads Seafile again when the last read is older than 15 seconds.
 // -----------------------------------------------------------------------------
 
-import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
-
-const logger = createLogger({ name: 'scenes' });
+import { lastModified, quotaPercent } from './devices.js';
+import { SENTENCE_TEXT, formatBytes, formatTime, labelled } from './texts.js';
 
 export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
+  async get_account_status(hub) {
+    const account = await hub.currentAccount();
+    const language = hub.config.language;
+    const words = SENTENCE_TEXT[language] ?? SENTENCE_TEXT.en;
+    const percent = quotaPercent(account);
+    const used = formatBytes(account.usage);
+    const quota = account.quota ? formatBytes(account.quota) : '';
+    const last = lastModified(hub.repos);
+    const lastTime = last ? formatTime(last.mtime, language) : '';
+    const own = hub.repos.filter((repo) => repo.kind === 'mine').length;
+    const parts = [
+      percent === null ? words.noQuota(used) : words.quota(percent, used, quota),
+      words.libraries(own),
+      ...(last ? [words.last(last.name, lastTime)] : []),
+    ];
+    return {
+      account: account.name,
+      used_size: used,
+      quota_size: quota,
+      quota_percent: percent ?? -1,
+      libraries: own,
+      shared_libraries: hub.repos.length - own,
+      devices: hub.linkedDevices.length,
+      last_modified_library: last?.name ?? '',
+      last_modified_time: lastTime,
+      sentence: `${labelled('Seafile', parts.join(', '), language)}.`,
+    };
   },
 };

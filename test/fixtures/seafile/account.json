@@ -1,0 +1,16 @@
+{
+  "space_usage": "5.0%",
+  "avatar_url": "http://seafile.example.com/media/avatars/default.png",
+  "email": "e161e60e5af34c2c863fc284344896e3@auth.local",
+  "name": "Alice",
+  "total": 100000000,
+  "usage": 5000000,
+  "login_id": "",
+  "department": "",
+  "contact_email": "alice@example.com",
+  "institution": "",
+  "is_staff": false,
+  "enable_subscription": false,
+  "file_updates_email_interval": 0,
+  "collaborate_email_interval": 0
+}

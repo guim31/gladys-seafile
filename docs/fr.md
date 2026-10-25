@@ -1,67 +1,178 @@
-# Template de démonstration
+# Seafile
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+[Seafile](https://www.seafile.com/) est un service de stockage et de
+synchronisation de fichiers auto-hébergé : vos bibliothèques vivent sur votre
+serveur, les applications de bureau et mobiles les gardent synchronisées. Cette
+intégration amène un compte Seafile dans Gladys : l'espace utilisé et le quota,
+les bibliothèques, les appareils liés, et un déclencheur de scène **quand une
+bibliothèque est modifiée** (un fichier ajouté, modifié ou supprimé), avec qui
+l'a modifiée. Elle prévient aussi quand le quota dépasse un seuil, et un widget
+du tableau de bord montre le quota et les dernières bibliothèques modifiées.
+Pour un administrateur, un second appareil suit tout le serveur.
 
-## Ce que vous obtenez
+Testée avec un vrai Seafile Server CE 12.0 (image Docker
+`seafileltd/seafile-mc` avec MariaDB et memcached) : un compte ordinaire avec
+quota, un administrateur, des bibliothèques à lui, partagées et de groupe, des
+fichiers déposés, le quota modifié, un client de bureau lié, un mauvais mot de
+passe. Pas encore testée sur un vrai Gladys : vos retours sont les bienvenus
+dans [les issues](https://github.com/guim31/gladys-seafile/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Ce qu'il faut
 
-## Configuration
+- Gladys Assistant 5.1.0 ou plus récent.
+- Seafile Server (édition Community ou Professional, version 11 ou plus),
+  joignable depuis la machine de Gladys à l'adresse de son interface web.
+- Un compte Seafile : son e-mail (ou identifiant) et son mot de passe, ou un
+  **jeton d'API** si le compte utilise la double authentification. Un compte
+  administrateur ajoute l'appareil serveur ; un compte ordinaire suffit pour le
+  reste.
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+L'intégration lit Seafile chaque minute par défaut : quatre requêtes légères
+sur votre réseau (compte, bibliothèques, appareils liés, et les chiffres du
+serveur pour un administrateur).
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Mise en route
 
-## Actions
+### 1. Configurer l'intégration
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Dans Gladys, ouvrez **Intégrations → Seafile → Configuration** et remplissez :
 
-## Scènes
+- **Adresse de Seafile** : l'adresse de l'interface web, comme dans votre
+  navigateur, ex. `http://192.168.1.2:8000` ou `https://cloud.example.com`. Un
+  lien copié depuis la page d'une bibliothèque convient aussi.
+- **E-mail ou identifiant** et **Mot de passe** du compte.
+- **Jeton d'API** (facultatif) : à la place du mot de passe, nécessaire quand
+  la double authentification est active. Pour en obtenir un, lancez sur
+  n'importe quel ordinateur
+  `curl -d username=EMAIL -d password=MOTDEPASSE -H "X-SEAFILE-OTP: CODE" https://cloud.example.com/api2/auth-token/`
+  (`CODE` est le code du moment de votre application d'authentification) et
+  copiez le `token` de la réponse.
+- **Fréquence de lecture** : de 30 secondes à 15 minutes. C'est aussi le délai
+  du déclencheur « Une bibliothèque est modifiée ».
+- **Seuil d'alerte de quota** : de 70 à 95 %.
+- **Langue des noms** : la langue des noms des fonctionnalités et des textes
+  envoyés par l'intégration.
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Cliquez ensuite sur **Tester la connexion** : la réponse donne la version de
+Seafile, le compte, l'espace utilisé et le nombre de bibliothèques.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+### 2. Ajouter les appareils
+
+Ouvrez l'onglet **Découverte** : le compte y figure, et le serveur aussi pour un
+administrateur. Ajoutez ceux que vous voulez suivre.
+
+## Les appareils
+
+**Le compte** (`Seafile <nom>`) :
+
+| Fonctionnalité                 | Signification                                             |
+| ------------------------------ | --------------------------------------------------------- |
+| En ligne                       | 1 tant que Seafile répond, 0 sinon                        |
+| Quota utilisé                  | pourcentage du quota utilisé (0 sans quota)               |
+| Espace utilisé                 | espace utilisé par le compte, en Mo                       |
+| Quota                          | le quota du compte, en Mo (rien sans quota)               |
+| Mes bibliothèques              | bibliothèques dont le compte est propriétaire             |
+| Bibliothèques partagées        | bibliothèques partagées avec le compte, ou de ses groupes |
+| Appareils liés                 | applications de bureau et mobiles liées au compte         |
+| Dernière bibliothèque modifiée | nom de la dernière bibliothèque modifiée                  |
+| Dernière modification          | son jour et son heure                                     |
+
+**Le serveur** (`Serveur Seafile`, comptes administrateurs seulement) :
+
+- Utilisateurs
+- Utilisateurs actifs
+- Bibliothèques
+- Fichiers
+- Groupes
+- Appareils liés
+- Appareils connectés
+- Stockage utilisé
+
+Le stockage utilisé est en Mo, pour toutes les bibliothèques du serveur.
+
+L'intégration lit Seafile avec son propre minuteur, et ne publie que ce qui
+change (plus une valeur inchangée toutes les 12 heures, pour que Gladys
+n'affiche jamais « pas de valeur récente »).
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Stockage Seafile** montre le quota utilisé en jauge (vert, orange
+10 points avant le seuil, rouge au-delà), l'espace utilisé, le nombre de
+bibliothèques, puis les six dernières bibliothèques modifiées avec leur taille
+et leur heure. Le bouton **Actualiser** relit Seafile. Il fonctionne avant même
+l'ajout du compte dans Gladys.
+
+## Scènes
+
+### Déclencheurs
+
+- **Une bibliothèque est modifiée** : un fichier est ajouté, modifié, supprimé
+  ou renommé dans une bibliothèque que voit le compte. Filtres : la
+  bibliothèque (son nom exact) et qui l'a modifiée (le nom affiché par
+  Seafile), vides pour toutes. Variables : bibliothèque, modifiée par,
+  propriétaire, taille, taille en octets, et si la bibliothèque est partagée
+  avec le compte. Un événement par bibliothèque à chaque lecture ; une
+  bibliothèque créée n'est pas annoncée, sa modification suivante l'est.
+- **Le quota dépasse le seuil** : le compte dépasse le seuil de la
+  configuration. Une fois, jusqu'à ce que l'usage redescende 5 points en
+  dessous. Variables : quota utilisé (%), seuil, espace utilisé, quota.
+
+Une modification faite pendant que l'intégration ou Gladys était arrêtée est
+annoncée à la lecture suivante, une fois. Rien n'est annoncé à la toute première
+lecture.
+
+### Actions
+
+- **État du compte** : lit le compte (à nouveau si la dernière lecture date de
+  plus de 15 secondes) et donne l'espace utilisé, le quota, le quota utilisé
+  (-1 sans quota), les bibliothèques, les appareils liés, la dernière
+  bibliothèque modifiée avec son heure, et une phrase toute prête comme
+  « Seafile : 4.2 GB utilisés sur 10.0 GB (42 %), 3 bibliothèques, dernière
+  modification : Photos le 22/10 08:12. »
+
+### Idées de scènes
+
+- Quand la bibliothèque « Scans » est modifiée, vous envoyer un message
+  « Nouveau scan dans Seafile ».
+- Quand le quota dépasse le seuil, envoyer un message avec l'espace utilisé et
+  le quota.
+- Chaque dimanche soir, lancer « État du compte » et envoyer sa phrase.
+- Quand « En ligne » du compte passe à 0, envoyer un message : Seafile est
+  arrêté.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Seafile ne répond pas »** : vérifiez l'adresse depuis la machine de
+  Gladys (l'interface web doit s'y ouvrir), et le pare-feu.
+- **« identifiant, mot de passe ou jeton refusé par Seafile »** : vérifiez-les
+  dans l'interface web ; un jeton d'API est supprimé quand le mot de passe
+  change ou quand vous vous déconnectez de tous les appareils.
+- **« double authentification active : utilisez un jeton d'API »** : créez un
+  jeton comme indiqué plus haut.
+- **« aucune API Seafile à cette adresse »** : l'adresse n'est pas celle de
+  l'interface web de Seafile (le port 8082 du serveur de fichiers ne suffit
+  pas).
+- **« l'adresse redirige »** : saisissez l'adresse en `https://`.
+- **« certificat refusé »** : le conteneur ne fait confiance qu'aux certificats
+  valides ; utilisez-en un, ou l'adresse en `http://` sur votre réseau.
+- **« Seafile limite les requêtes »** : choisissez une fréquence plus lente.
+- **Pas d'appareil serveur** : le compte n'est pas administrateur. Une
+  promotion est vue dans l'heure.
+- Les logs de l'intégration (Intégrations → Seafile) en disent plus, sans
+  aucun mot de passe ni jeton.
+
+## Limites
+
+- Un compte par intégration. Les bibliothèques sont celles que voit le compte.
+- « Une bibliothèque est modifiée » dit quelle bibliothèque et qui, pas quel
+  fichier.
+- Une bibliothèque modifiée plusieurs fois entre deux lectures donne un seul
+  événement ; 20 bibliothèques au plus sont annoncées par lecture.
+- Les tailles sont en unités décimales (1 Mo = 1 000 000 octets), comme les
+  affiche Seafile.
+- Le mot de passe reste dans la configuration de Gladys ; seul le jeton que
+  Seafile donne en échange est gardé, en mémoire. Rien de secret n'est écrit
+  dans `/data`.
+- Développée et testée avec un vrai Seafile en Docker, pas encore sur toutes
+  les installations : vos retours sont les bienvenus. Sans lien avec Seafile
+  Ltd.

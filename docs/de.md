@@ -1,0 +1,179 @@
+# Seafile
+
+[Seafile](https://www.seafile.com/) ist ein selbst gehosteter Dienst zum
+Speichern und Synchronisieren von Dateien: Deine Bibliotheken liegen auf deinem
+eigenen Server, die Desktop- und Mobil-Apps halten sie synchron. Diese
+Integration bringt ein Seafile-Konto in Gladys: belegten Speicher und
+Kontingent, die Bibliotheken, die verknüpften Geräte, und einen
+Szenen-Auslöser, **wenn eine Bibliothek geändert wird** (eine Datei
+hinzugefügt, geändert oder gelöscht), mit dem, der sie geändert hat. Die Integration warnt
+auch, wenn das Kontingent eine Schwelle überschreitet, und ein Widget im
+Dashboard zeigt das Kontingent und die zuletzt geänderten Bibliotheken. Für
+einen Administrator verfolgt ein zweites Gerät den ganzen Server.
+
+Getestet mit einem echten Seafile Server CE 12.0 (Docker-Image
+`seafileltd/seafile-mc` mit MariaDB und memcached): ein normales Konto mit
+Kontingent, ein Administrator, eigene, geteilte und Gruppen-Bibliotheken,
+hochgeladene Dateien, geändertes Kontingent, ein verknüpfter Desktop-Client,
+ein falsches Passwort. Noch nicht mit einem echten Gladys getestet: Feedback
+ist willkommen in [den Issues](https://github.com/guim31/gladys-seafile/issues).
+
+## Was du brauchst
+
+- Gladys Assistant 5.1.0 oder neuer.
+- Seafile Server (Community- oder Professional-Edition, Version 11 oder
+  neuer), vom Gladys-Rechner aus unter der Adresse seiner Weboberfläche
+  erreichbar.
+- Ein Seafile-Konto: seine E-Mail (oder sein Benutzername) und sein Passwort,
+  oder ein **API-Token**, wenn das Konto die Zwei-Faktor-Authentifizierung
+  nutzt. Ein Administratorkonto fügt das Server-Gerät hinzu; für den Rest
+  reicht ein normales Konto.
+
+Die Integration liest Seafile standardmäßig jede Minute: vier leichte Anfragen
+in deinem eigenen Netzwerk (Konto, Bibliotheken, verknüpfte Geräte und für
+einen Administrator die Serverzahlen).
+
+## Einrichtung
+
+### 1. Die Integration konfigurieren
+
+Öffne in Gladys **Integrationen → Seafile → Konfiguration** und fülle aus:
+
+- **Seafile-Adresse**: die Adresse der Weboberfläche, wie in deinem Browser,
+  z. B. `http://192.168.1.2:8000` oder `https://cloud.example.com`. Ein von der
+  Seite einer Bibliothek kopierter Link geht auch.
+- **E-Mail oder Benutzername** und **Passwort** des Kontos.
+- **API-Token** (optional): statt des Passworts, nötig, wenn die
+  Zwei-Faktor-Authentifizierung aktiv ist. Um eines zu bekommen, führe auf
+  einem beliebigen Rechner
+  `curl -d username=EMAIL -d password=PASSWORT -H "X-SEAFILE-OTP: CODE" https://cloud.example.com/api2/auth-token/`
+  aus (`CODE` ist der aktuelle Code deiner Authentifizierungs-App) und
+  kopiere das `token` der Antwort.
+- **Aktualisierungsintervall**: 30 Sekunden bis 15 Minuten. Es ist auch die
+  Verzögerung des Auslösers „Eine Bibliothek wird geändert“.
+- **Kontingent-Warnschwelle**: 70 bis 95 %.
+- **Sprache der Namen**: die Sprache der Funktionsnamen und der Texte der
+  Integration.
+
+Klicke dann auf **Verbindung testen**: Die Antwort nennt die Seafile-Version,
+das Konto, den belegten Speicher und die Zahl der Bibliotheken.
+
+### 2. Die Geräte hinzufügen
+
+Öffne den Tab **Entdecken**: Dort steht das Konto und für einen Administrator
+auch der Server. Füge die hinzu, die du verfolgen willst.
+
+## Die Geräte
+
+**Das Konto** (`Seafile <Name>`):
+
+| Funktion                     | Bedeutung                                                   |
+| ---------------------------- | ----------------------------------------------------------- |
+| Online                       | 1, solange Seafile antwortet, sonst 0                       |
+| Belegtes Kontingent          | belegter Anteil des Kontingents in % (0 ohne Kontingent)    |
+| Belegter Speicher            | vom Konto belegter Speicher in MB                           |
+| Kontingent                   | das Kontingent des Kontos in MB (nichts ohne Kontingent)    |
+| Meine Bibliotheken           | Bibliotheken, die dem Konto gehören                         |
+| Geteilte Bibliotheken        | mit dem Konto geteilte Bibliotheken oder die seiner Gruppen |
+| Verknüpfte Geräte            | mit dem Konto verknüpfte Desktop- und Mobil-Apps            |
+| Zuletzt geänderte Bibliothek | Name der zuletzt geänderten Bibliothek                      |
+| Letzte Änderung              | ihr Tag und ihre Uhrzeit                                    |
+
+**Der Server** (`Seafile-Server`, nur Administratorkonten):
+
+- Benutzer
+- Aktive Benutzer
+- Bibliotheken
+- Dateien
+- Gruppen
+- Verknüpfte Geräte
+- Verbundene Geräte
+- Belegter Speicher
+
+Der belegte Speicher ist in MB, für alle Bibliotheken des Servers.
+
+Die Integration liest Seafile mit ihrem eigenen Timer und veröffentlicht nur,
+was sich ändert (dazu alle 12 Stunden einen unveränderten Wert, damit Gladys
+nie „kein aktueller Wert“ anzeigt).
+
+## Dashboard
+
+Das Widget **Seafile-Speicher** zeigt das belegte Kontingent als Anzeige (grün,
+orange 10 Punkte vor der Schwelle, rot darüber), den belegten Speicher, die
+Zahl der Bibliotheken und dann die sechs zuletzt geänderten Bibliotheken mit
+Größe und Uhrzeit. Der Button **Aktualisieren** liest Seafile neu. Es
+funktioniert schon, bevor das Konto in Gladys angelegt ist.
+
+## Szenen
+
+### Auslöser
+
+- **Eine Bibliothek wird geändert**: Eine Datei wird in einer Bibliothek, die
+  das Konto sieht, hinzugefügt, geändert, gelöscht oder umbenannt. Filter: die
+  Bibliothek (ihr genauer Name) und wer sie geändert hat (der von Seafile
+  angezeigte Name), leer für alle. Variablen: Bibliothek, geändert von,
+  Eigentümer, Größe, Größe in Bytes und ob die Bibliothek mit dem Konto geteilt
+  ist. Ein Ereignis pro Bibliothek bei jedem Lesen; eine neu angelegte
+  Bibliothek wird nicht gemeldet, ihre nächste Änderung schon.
+- **Das Kontingent überschreitet die Schwelle**: Das Konto überschreitet die
+  Schwelle der Konfiguration. Einmal, bis die Nutzung wieder 5 Punkte darunter
+  sinkt. Variablen: belegtes Kontingent (%), Schwelle, belegter Speicher,
+  Kontingent.
+
+Eine Änderung, während die Integration oder Gladys gestoppt war, wird beim
+nächsten Lesen gemeldet, einmal. Beim allerersten Lesen wird nichts gemeldet.
+
+### Aktionen
+
+- **Zustand des Kontos**: liest das Konto (neu, wenn das letzte Lesen älter als
+  15 Sekunden ist) und gibt belegten Speicher, Kontingent, belegtes
+  Kontingent (-1 ohne Kontingent), die Bibliotheken, die verknüpften Geräte,
+  die zuletzt geänderte Bibliothek mit Uhrzeit und einen fertigen Satz wie
+  „Seafile: 4.2 GB von 10.0 GB belegt (42 %), 3 Bibliotheken, zuletzt
+  geändert: Photos am 22/10 08:12.“
+
+### Szenen-Ideen
+
+- Wenn die Bibliothek „Scans“ geändert wird, schicke dir eine Nachricht „Neuer
+  Scan in Seafile“.
+- Wenn das Kontingent die Schwelle überschreitet, schicke eine Nachricht mit
+  belegtem Speicher und Kontingent.
+- Jeden Sonntagabend „Zustand des Kontos“ ausführen und den Satz schicken.
+- Wenn „Online“ des Kontos auf 0 geht, eine Nachricht schicken: Seafile ist
+  ausgefallen.
+
+## Fehlerbehebung
+
+- **„Seafile antwortet nicht“**: Prüfe die Adresse vom Gladys-Rechner aus (die
+  Weboberfläche muss sich dort öffnen) und die Firewall.
+- **„Benutzername, Passwort oder Token von Seafile abgelehnt“**: Prüfe sie in
+  der Weboberfläche; ein API-Token wird gelöscht, wenn sich das Passwort ändert
+  oder du dich von allen Geräten abmeldest.
+- **„Zwei-Faktor-Authentifizierung aktiv: Nutze ein API-Token“**: Erstelle ein
+  Token wie oben beschrieben.
+- **„keine Seafile-API unter dieser Adresse“**: Die Adresse ist nicht die der
+  Seafile-Weboberfläche (Port 8082 des Dateiservers reicht nicht).
+- **„die Adresse leitet um“**: Gib die `https://`-Adresse ein.
+- **„Zertifikat abgelehnt“**: Der Container vertraut nur gültigen
+  Zertifikaten; nutze ein gültiges oder die `http://`-Adresse in deinem
+  Netzwerk.
+- **„Seafile begrenzt die Anfragen“**: Wähle ein längeres Intervall.
+- **Kein Server-Gerät**: Das Konto ist kein Administrator. Eine Beförderung
+  wird innerhalb einer Stunde erkannt.
+- Die Protokolle der Integration (Integrationen → Seafile) sagen mehr, ohne
+  Passwort oder Token.
+
+## Grenzen
+
+- Ein Konto pro Integration. Die Bibliotheken sind die, die das Konto sieht.
+- „Eine Bibliothek wird geändert“ sagt, welche Bibliothek und wer, nicht welche
+  Datei.
+- Eine Bibliothek, die zwischen zwei Lesevorgängen mehrmals geändert wird, gibt
+  ein einziges Ereignis; höchstens 20 Bibliotheken werden pro Lesen gemeldet.
+- Größen sind in Dezimaleinheiten (1 MB = 1.000.000 Bytes), wie Seafile sie
+  anzeigt.
+- Das Passwort bleibt in der Konfiguration von Gladys; nur das Token, das
+  Seafile dafür gibt, wird im Speicher behalten. Nichts Geheimes wird unter
+  `/data` geschrieben.
+- Mit einem echten Seafile in Docker entwickelt und getestet, noch nicht auf
+  jeder Installation: Feedback ist willkommen. Keine Verbindung zu Seafile Ltd.

@@ -32,15 +32,20 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (index.js and the tests)
+src/hub.js                        reading timer, scene events, states, transports, status
+src/devices.js                    the account and server devices, their feature values
+src/seafile/client.js             Seafile Web API client (login, account, repos, devices, sysinfo)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
 src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/texts.js                      texts sent to Gladys, in en/fr/de/es; dates and sizes
+src/store.js                      /data persistence (last mtime of every library, quota state)
+src/problems.js                   one log line when a repeated failure starts, one when it ends
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+test/helpers/fakeSeafile.js       in-memory Seafile built on the real answers (test/fixtures/seafile)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +75,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** is in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, widget texts, feature names,
+  manifest texts, and `docs/{en,fr,de,es}.md`, kept in sync
+  (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +240,29 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Seafile (notes de cette intégration)
+
+Vérifié contre Seafile Server CE 12.0.14 (`seafileltd/seafile-mc:12.0-latest`, MariaDB 11, memcached), le
+25/10/2026.
+
+- **Authentification** : `POST /api2/auth-token/` (formulaire `username`, `password`) rend un jeton sans
+  expiration ; mauvais identifiants = **HTTP 400** `non_field_errors`, pas 401. Avec la double authentification,
+  en-tête `X-Seafile-OTP: required` : il faut un jeton créé à la main (`-H "X-SEAFILE-OTP: <code>"`). Un jeton
+  refusé = 401 `Invalid token` : on se reconnecte une fois (mot de passe), jamais avec un jeton saisi.
+  L'identifiant accepté est l'e-mail de contact ou le login ; l'e-mail interne des comptes créés en 12 est un
+  hash `…@auth.local` (c'est lui qui fait l'identité de l'appareil, hashé encore).
+- **`/api2/account/info/`** : `usage` et `total` en **octets décimaux** ; `total` = **-2** sans quota (illimité).
+  Un quota posé à 100 par l'admin (`PUT /api/v2.1/admin/users/<email>/ quota_total=100`) vaut 100 000 000.
+- **`/api2/repos/`** : bibliothèques à soi (`repo`), partagées (`srepo`) et de groupe (`grepo`, **une entrée par
+  groupe** : dédoublonner par `id`). `mtime` en secondes, avancé par chaque commit (fichier ajouté, supprimé…),
+  `modifier_name` = auteur du dernier commit. Pas de nom de fichier : il faudrait `/api/v2.1/activities/`
+  (présent en CE 12, mais dépend de seafevents).
+- **`/api2/devices/`** : chaque client lié porte **son jeton dans `key`** : ne jamais le garder ni le logguer.
+  Un login de l'intégration sans `platform`/`device_id` ne crée pas d'appareil lié.
+- **`/api/v2.1/admin/sysinfo/`** : 403 pour un compte non administrateur (redemandé toutes les heures) ;
+  `repos_count` compte toutes les bibliothèques, y compris celles des modèles.
+- Image Docker de test : `SEAFILE_SERVER_HOSTNAME` doit contenir un point (sinon « not a valid ip or domain »),
+  et les liens d'upload renvoient ce nom d'hôte : le réécrire vers l'IP du conteneur.
+- Fonctionnalité seule de son couple sur l'appareil compte (`input/binary`, `level-sensor/liquid-level-percent`) :
+  acceptée, aucun second capteur n'a de sens ; le test de conformité le dit.

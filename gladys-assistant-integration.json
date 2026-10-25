@@ -1,177 +1,609 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Seafile",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your Seafile account in Gladys: space, quota, libraries, and a scene when a library changes.",
+    "fr": "Votre compte Seafile dans Gladys : espace, quota, bibliothèques, et une scène à chaque modification.",
+    "de": "Dein Seafile-Konto in Gladys: Speicher, Kontingent, Bibliotheken und eine Szene bei jeder Änderung.",
+    "es": "Su cuenta de Seafile en Gladys: espacio, cuota, bibliotecas y una escena en cada cambio."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-seafile:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-seafile/main/cover.png",
+  "categories": ["services"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Seafile account",
+        "fr": "Votre compte Seafile",
+        "de": "Dein Seafile-Konto",
+        "es": "Su cuenta de Seafile"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Enter the address of the Seafile web interface and the username and password of your account, or an API token if two-factor authentication is on. Then add the account (and the server, for an administrator) from the Discover tab.",
+        "fr": "Saisissez l'adresse de l'interface web de Seafile et l'identifiant et le mot de passe de votre compte, ou un jeton d'API si la double authentification est active. Ajoutez ensuite le compte (et le serveur, pour un administrateur) depuis l'onglet Découverte.",
+        "de": "Gib die Adresse der Seafile-Weboberfläche und Benutzername und Passwort deines Kontos ein, oder ein API-Token, wenn die Zwei-Faktor-Authentifizierung aktiv ist. Lege dann das Konto (und für einen Administrator den Server) im Tab „Entdecken“ an.",
+        "es": "Introduzca la dirección de la interfaz web de Seafile y el usuario y la contraseña de su cuenta, o un token de API si la autenticación en dos pasos está activa. Después añada la cuenta (y el servidor, para un administrador) desde la pestaña Descubrir."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-seafile/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://manual.seafile.com/latest/develop/web_api_v2.1/",
+          "label": {
+            "en": "Seafile Web API",
+            "fr": "API web de Seafile",
+            "de": "Seafile-Web-API",
+            "es": "API web de Seafile"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Seafile address",
+        "fr": "Adresse de Seafile",
+        "de": "Seafile-Adresse",
+        "es": "Dirección de Seafile"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The address of the web interface, as in your browser.",
+        "fr": "L'adresse de l'interface web, comme dans votre navigateur.",
+        "de": "Die Adresse der Weboberfläche, wie in deinem Browser.",
+        "es": "La dirección de la interfaz web, como en su navegador."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2:8000",
+        "fr": "ex. http://192.168.1.2:8000",
+        "de": "z. B. http://192.168.1.2:8000",
+        "es": "p. ej. http://192.168.1.2:8000"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "Email or username",
+        "fr": "E-mail ou identifiant",
+        "de": "E-Mail oder Benutzername",
+        "es": "Correo o usuario"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The one you log in to Seafile with.",
+        "fr": "Celui avec lequel vous vous connectez à Seafile.",
+        "de": "Der, mit dem du dich bei Seafile anmeldest.",
+        "es": "El que usa para iniciar sesión en Seafile."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "api_token",
+      "type": "secret",
+      "label": {
+        "en": "API token",
+        "fr": "Jeton d'API",
+        "de": "API-Token",
+        "es": "Token de API"
+      },
+      "description": {
+        "en": "Optional, instead of the password: needed with two-factor authentication. See the setup guide.",
+        "fr": "Facultatif, à la place du mot de passe : nécessaire avec la double authentification. Voir le guide.",
+        "de": "Optional, statt des Passworts: nötig mit Zwei-Faktor-Authentifizierung. Siehe Anleitung.",
+        "es": "Opcional, en lugar de la contraseña: necesario con la autenticación en dos pasos. Vea la guía."
+      },
+      "required": false
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Fréquence de lecture",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "Also the delay of the scene on a library modified.",
+        "fr": "C'est aussi le délai de la scène sur une bibliothèque modifiée.",
+        "de": "Auch die Verzögerung der Szene bei einer geänderten Bibliothek.",
+        "es": "También el retraso de la escena ante una biblioteca modificada."
+      },
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "900",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        }
+      ],
+      "default": "60"
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "key": "quota_threshold",
+      "type": "select",
+      "label": {
+        "en": "Quota alert threshold",
+        "fr": "Seuil d'alerte de quota",
+        "de": "Kontingent-Warnschwelle",
+        "es": "Umbral de alerta de cuota"
       },
-      "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "description": {
+        "en": "The scene trigger fires when the account goes above it.",
+        "fr": "Le déclencheur de scène part quand le compte le dépasse.",
+        "de": "Der Szenen-Auslöser startet, wenn das Konto sie überschreitet.",
+        "es": "El disparador de escena se activa cuando la cuenta lo supera."
+      },
+      "options": [
+        {
+          "value": "70",
+          "label": {
+            "en": "70 %",
+            "fr": "70 %",
+            "de": "70 %",
+            "es": "70 %"
+          }
+        },
+        {
+          "value": "80",
+          "label": {
+            "en": "80 %",
+            "fr": "80 %",
+            "de": "80 %",
+            "es": "80 %"
+          }
+        },
+        {
+          "value": "90",
+          "label": {
+            "en": "90 %",
+            "fr": "90 %",
+            "de": "90 %",
+            "es": "90 %"
+          }
+        },
+        {
+          "value": "95",
+          "label": {
+            "en": "95 %",
+            "fr": "95 %",
+            "de": "95 %",
+            "es": "95 %"
+          }
+        }
+      ],
+      "default": "90"
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
+      "description": {
+        "en": "Feature names and texts sent by the integration.",
+        "fr": "Noms des fonctionnalités et textes envoyés par l'intégration.",
+        "de": "Namen der Funktionen und Texte der Integration.",
+        "es": "Nombres de las funciones y textos enviados por la integración."
+      },
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ],
+      "default": "fr"
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "library_modified",
+      "label": {
+        "en": "A library is modified",
+        "fr": "Une bibliothèque est modifiée",
+        "de": "Eine Bibliothek wird geändert",
+        "es": "Se modifica una biblioteca"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A file is added, changed, deleted or renamed in a library the account sees (its own, shared or of a group). One event per library at each reading.",
+        "fr": "Un fichier est ajouté, modifié, supprimé ou renommé dans une bibliothèque que voit le compte (à lui, partagée ou de groupe). Un événement par bibliothèque à chaque lecture.",
+        "de": "Eine Datei wird in einer Bibliothek des Kontos (eigene, geteilte oder einer Gruppe) hinzugefügt, geändert, gelöscht oder umbenannt. Ein Ereignis pro Bibliothek bei jedem Lesen.",
+        "es": "Se añade, modifica, elimina o renombra un archivo en una biblioteca que ve la cuenta (propia, compartida o de un grupo). Un evento por biblioteca en cada lectura."
       },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "key": "library",
+          "type": "string",
+          "label": {
+            "en": "Library (empty: any)",
+            "fr": "Bibliothèque (vide : toutes)",
+            "de": "Bibliothek (leer: alle)",
+            "es": "Biblioteca (vacío: todas)"
+          },
+          "description": {
+            "en": "Exactly its name in Seafile, e.g. Photos",
+            "fr": "Exactement son nom dans Seafile, ex. Photos",
+            "de": "Genau ihr Name in Seafile, z. B. Fotos",
+            "es": "Exactamente su nombre en Seafile, p. ej. Fotos"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "key": "modified_by",
+          "type": "string",
+          "label": {
+            "en": "Modified by (empty: anyone)",
+            "fr": "Modifiée par (vide : tous)",
+            "de": "Geändert von (leer: alle)",
+            "es": "Modificada por (vacío: todos)"
+          },
+          "description": {
+            "en": "The name of the user in Seafile",
+            "fr": "Le nom de l'utilisateur dans Seafile",
+            "de": "Der Name des Benutzers in Seafile",
+            "es": "El nombre del usuario en Seafile"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "library",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Library",
+            "fr": "Bibliothèque",
+            "de": "Bibliothek",
+            "es": "Biblioteca"
+          }
+        },
+        {
+          "key": "modified_by",
+          "type": "string",
+          "label": {
+            "en": "Modified by",
+            "fr": "Modifiée par",
+            "de": "Geändert von",
+            "es": "Modificada por"
+          }
+        },
+        {
+          "key": "owner",
+          "type": "string",
+          "label": {
+            "en": "Owner",
+            "fr": "Propriétaire",
+            "de": "Eigentümer",
+            "es": "Propietario"
+          }
+        },
+        {
+          "key": "size",
+          "type": "string",
+          "label": {
+            "en": "Size",
+            "fr": "Taille",
+            "de": "Größe",
+            "es": "Tamaño"
+          }
+        },
+        {
+          "key": "size_bytes",
+          "type": "number",
+          "label": {
+            "en": "Size (bytes)",
+            "fr": "Taille (octets)",
+            "de": "Größe (Bytes)",
+            "es": "Tamaño (bytes)"
+          }
+        },
+        {
+          "key": "shared",
+          "type": "boolean",
+          "label": {
+            "en": "Shared with the account",
+            "fr": "Partagée avec le compte",
+            "de": "Mit dem Konto geteilt",
+            "es": "Compartida con la cuenta"
+          }
+        }
+      ]
+    },
+    {
+      "key": "quota_threshold_reached",
+      "label": {
+        "en": "The quota goes above the threshold",
+        "fr": "Le quota dépasse le seuil",
+        "de": "Das Kontingent überschreitet die Schwelle",
+        "es": "La cuota supera el umbral"
+      },
+      "description": {
+        "en": "The account goes above the quota threshold of the configuration. Once, until the usage goes back down.",
+        "fr": "Le compte dépasse le seuil de quota de la configuration. Une fois, jusqu'à ce que l'usage redescende.",
+        "de": "Das Konto überschreitet die Kontingentschwelle der Konfiguration. Einmal, bis die Nutzung wieder sinkt.",
+        "es": "La cuenta supera el umbral de cuota de la configuración. Una vez, hasta que el uso vuelva a bajar."
+      },
+      "variables": [
+        {
+          "key": "percent",
+          "type": "number",
+          "label": {
+            "en": "Quota used (%)",
+            "fr": "Quota utilisé (%)",
+            "de": "Belegtes Kontingent (%)",
+            "es": "Cuota usada (%)"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold (%)",
+            "fr": "Seuil (%)",
+            "de": "Schwelle (%)",
+            "es": "Umbral (%)"
+          }
+        },
+        {
+          "key": "used_size",
+          "type": "string",
+          "label": {
+            "en": "Space used",
+            "fr": "Espace utilisé",
+            "de": "Belegter Speicher",
+            "es": "Espacio usado"
+          }
+        },
+        {
+          "key": "quota_size",
+          "type": "string",
+          "label": {
+            "en": "Quota",
+            "fr": "Quota",
+            "de": "Kontingent",
+            "es": "Cuota"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_account_status",
+      "label": {
+        "en": "State of the account",
+        "fr": "État du compte",
+        "de": "Zustand des Kontos",
+        "es": "Estado de la cuenta"
       },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
+      "description": {
+        "en": "Reads the space used, the quota, the libraries and the last library modified of the Seafile account, and a ready-made sentence.",
+        "fr": "Lit l'espace utilisé, le quota, les bibliothèques et la dernière bibliothèque modifiée du compte Seafile, et une phrase toute prête.",
+        "de": "Liest belegten Speicher, Kontingent, Bibliotheken und die zuletzt geänderte Bibliothek des Seafile-Kontos, und einen fertigen Satz.",
+        "es": "Lee el espacio usado, la cuota, las bibliotecas y la última biblioteca modificada de la cuenta de Seafile, y una frase lista."
+      },
+      "timeout_seconds": 30,
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "account",
+          "type": "string",
+          "label": {
+            "en": "Account",
+            "fr": "Compte",
+            "de": "Konto",
+            "es": "Cuenta"
+          }
+        },
+        {
+          "key": "used_size",
+          "type": "string",
+          "label": {
+            "en": "Space used",
+            "fr": "Espace utilisé",
+            "de": "Belegter Speicher",
+            "es": "Espacio usado"
+          }
+        },
+        {
+          "key": "quota_size",
+          "type": "string",
+          "label": {
+            "en": "Quota",
+            "fr": "Quota",
+            "de": "Kontingent",
+            "es": "Cuota"
+          }
+        },
+        {
+          "key": "quota_percent",
+          "type": "number",
+          "label": {
+            "en": "Quota used (%, -1 without quota)",
+            "fr": "Quota utilisé (%, -1 sans quota)",
+            "de": "Belegtes Kontingent (%, -1 ohne)",
+            "es": "Cuota usada (%, -1 sin cuota)"
+          }
+        },
+        {
+          "key": "libraries",
+          "type": "number",
+          "label": {
+            "en": "My libraries",
+            "fr": "Mes bibliothèques",
+            "de": "Meine Bibliotheken",
+            "es": "Mis bibliotecas"
+          }
+        },
+        {
+          "key": "shared_libraries",
+          "type": "number",
+          "label": {
+            "en": "Shared libraries",
+            "fr": "Bibliothèques partagées",
+            "de": "Geteilte Bibliotheken",
+            "es": "Bibliotecas compartidas"
+          }
+        },
+        {
+          "key": "devices",
+          "type": "number",
+          "label": {
+            "en": "Linked devices",
+            "fr": "Appareils liés",
+            "de": "Verknüpfte Geräte",
+            "es": "Dispositivos vinculados"
+          }
+        },
+        {
+          "key": "last_modified_library",
+          "type": "string",
+          "label": {
+            "en": "Last library modified",
+            "fr": "Dernière bibliothèque modifiée",
+            "de": "Zuletzt geänderte Bibliothek",
+            "es": "Última biblioteca modificada"
+          }
+        },
+        {
+          "key": "last_modified_time",
+          "type": "string",
+          "label": {
+            "en": "Last modification",
+            "fr": "Dernière modification",
+            "de": "Letzte Änderung",
+            "es": "Última modificación"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "storage",
+      "label": {
+        "en": "Seafile storage",
+        "fr": "Stockage Seafile",
+        "de": "Seafile-Speicher",
+        "es": "Almacenamiento Seafile"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The quota and the space used of the account, and the libraries modified last.",
+        "fr": "Le quota et l'espace utilisé du compte, et les dernières bibliothèques modifiées.",
+        "de": "Kontingent und belegter Speicher des Kontos, und die zuletzt geänderten Bibliotheken.",
+        "es": "La cuota y el espacio usado de la cuenta, y las últimas bibliotecas modificadas."
+      },
+      "icon": "hard-drive",
+      "action_timeout_seconds": 30
     }
   ]
 }
